@@ -24,12 +24,33 @@ import instancegraph.visitor.search.SearchResult;
 import instancegraph.visitor.search.SearchVisitor;
 
 import java.io.PrintStream;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+/**
+ * A {@link Node} is the abstract implementation of a directed graph node in the
+ * InstanceGraph. A node can either be an {@link InnerNode} or a
+ * {@link LeafNode}. A {@link LeafNode} holds a primitive type or null as a
+ * value and never has children! If the method {@link #children()} is called on
+ * a {@link LeafNode} an Exception is thrown. An {@link InnerNode} always has
+ * children. <br/>
+ * A child is considered a labeled edge from this node to a field in a given
+ * instance. The fieldname is the name of the label. <br/>
+ * Note that the graph may contain cycles. <br/>
+ * Each node memorizes its name in the parent node ({@linkplain #getName()}),
+ * its instance ({@linkplain #getInstance()}), its type ({@linkplain #getType()}
+ * ) and its access modifiers ({@linkplain #getModifiers()}). To evaluate the
+ * modifiers the utility-class {@link Modifier} and its methods may be used.<br/>
+ * A node with no parent node, is considered the root or the start-node of the
+ * graph, the root-node has no valid access modifiers. Fields of an array
+ * neither have valid access modifiers.
+ * 
+ * @author keddelzz
+ */
 public interface Node {
 		
 	public boolean isLeaf();
@@ -38,6 +59,12 @@ public interface Node {
 		return !isLeaf();
 	}
 	
+	/**
+	 * @return A list of {@link Node}s if (and only if) {@linkplain #isLeaf()}
+	 *         returns true or {@linkplain #isInnerNode()} returns false
+	 * @throws RuntimeException
+	 *             if {@linkplain #isLeaf()} or not {@linkplain #isInnerNode()}
+	 */
 	public List<Node> children();
 	
 	public Object getInstance();
@@ -48,16 +75,25 @@ public interface Node {
 	
 	public int getModifiers();
 	
-	public void addSuperNode(Node node);
-	
+	/**
+	 * @return A list of so-called supernodes. A supernode is a collection of
+	 *         fields that is declared in the supertype ({@linkplain #getType()}
+	 *         .getSuperClass()) of the node.
+	 */
 	public List<Node> superNodes();
 	
 	public Class<?> getType();
 	
+	/**
+	 * Accept method for a visitor, which visits each node.
+	 */
 	default void accept(Visitor visitor) {
 		accept(0, visitor);
 	}
 	
+	/**
+	 * Accept method for a visitor, which visits each node.
+	 */
 	public void accept(int depth, Visitor visitor);
 	
 	default List<String> getPath() {

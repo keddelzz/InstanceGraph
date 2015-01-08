@@ -58,7 +58,6 @@ public abstract class AbstractNode implements Node {
 		return parent;
 	}
 	
-	@Override
 	public void addSuperNode(Node node) {
 		superNodes.add(node);
 	}
